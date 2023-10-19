@@ -33,6 +33,8 @@ import com.tracker_application.tracker.repository.UserRepository;
 //import com.tracker_application.tracker.service.MongoServiceApplication;
 import com.tracker_application.tracker.service.UserServiceApplication;
 
+//Main controller
+
 @RestController
 @RequestMapping("/user")
 public class UserController {
