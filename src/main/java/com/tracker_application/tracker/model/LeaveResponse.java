@@ -10,7 +10,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LeaveResponse {
-     private String Leaves;
+     private String leaves;
 
 
     

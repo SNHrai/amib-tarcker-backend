@@ -1,6 +1,7 @@
 package com.tracker_application.tracker.model;
 
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -14,9 +15,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-
-
-
 @Setter
 @Getter
 @ToString
@@ -27,14 +25,11 @@ import lombok.ToString;
 public class User {
 
     @Id
-    @Column(name = "EMP_ID",length = 55 ,unique = true, nullable = false)
+    @Column(name = "EMP_ID", length = 55, unique = true, nullable = false)
     private String id;
 
     @Column(name = "EMP_NAME")
     private String empName;
-
-    @Column(name = "EMP_ROLE")
-    private String empRole;
 
     @Column(name = "EMP_NUMBER")
     private String mobileNumber;
@@ -47,5 +42,8 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<TaskTracker> trackers;
+
+    @OneToMany(mappedBy = "user")
+    private Set<UserRole> userRosle;
 
 }
