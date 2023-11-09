@@ -11,6 +11,7 @@ import javax.persistence.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +28,7 @@ import com.tracker_application.tracker.model.LeaveResponse;
 import com.tracker_application.tracker.model.PasswordResponse;
 import com.tracker_application.tracker.model.ResponseModel;
 import com.tracker_application.tracker.model.TaskTracker;
+import com.tracker_application.tracker.model.User;
 // import com.tracker_application.tracker.model.UserName;
 import com.tracker_application.tracker.repository.TaskTrackerRepository;
 import com.tracker_application.tracker.repository.UserRepository;
@@ -95,6 +97,12 @@ public class UserController {
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @QueryMapping
+    public List<User> allUsers() {
+        List<User> list = userRepository.findAll();
+        return list;
     }
 
     // @GetMapping("/username")

@@ -1,6 +1,5 @@
 package com.tracker_application.tracker.repository;
 
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -30,17 +29,23 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("select u.id from User u where u.empName = :empName")
     public String findUserIdByUsername(String empName);
 
+    @Query("Select u from User u where u.id = :id and u.password = :password")
+    public User findByUserIdAndPassword(@Param(value = "id") String id, @Param(value = "password") String password);
+
     @Modifying
+    @Transactional
     @Query("Update User u set u.password = :password where u.id = :id")
-    public void resetPassword(@Param("id") String id, @Param("password") String passwrod);
+    public int resetPassword(@Param("id") String id, @Param("password") String passwrod);
 
     @Query("Select u.empName from User u where u.id= :id")
     public String findUserNameByUserId(@Param(value = "id") String id);
 
     @Query("Select u from User u where u.id= :id")
-    public User findAllUserNameByUserId(@Param(value = "id") String id);
+    public User findAllUserByUserId(@Param(value = "id") String id);
 
-
+    @Modifying
+    @Query("Update User u set u.email = :email where u.id = :id")
+    public void updateEmailById(@Param(value = "email") String email, @Param(value = "id") String id);
 
     // @Query("select u from User u where u.userName = :userName and u.password =
     // :password")

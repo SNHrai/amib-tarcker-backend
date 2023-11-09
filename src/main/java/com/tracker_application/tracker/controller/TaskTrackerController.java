@@ -20,8 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -157,6 +159,7 @@ public class TaskTrackerController {
 
   }
 
+
   @GetMapping("/leaves")
   public ResponseEntity<List<LeavesModel>> getAllLeavesData() {
     List<LeavesModel> leavesModels = serviceApplication.getAllLeaves();
@@ -261,6 +264,57 @@ public class TaskTrackerController {
 
   // Your UserRepository
 
+  // @PostMapping("/update/userdata")
+  // public boolean updateUserLoginDateAndTime(
+  // @RequestBody DataRequest dataRequest) {
+
+  // String username = dataRequest.getName();
+  // String leaves = dataRequest.getLeave();
+  // String id = userRepository.findUserIdByUsername(username);
+  // Timestamp loginDate = dataRequest.getDate(); // Current date and time
+
+  // if (id != null) {
+  // try {
+  // EntityManager manager = managerFactory.createEntityManager();
+  // EntityTransaction transaction = manager.getTransaction();
+
+  // try {
+  // transaction.begin();
+
+  // Query query = manager.createQuery(
+  // "UPDATE TaskTracker " +
+  // "SET date = :newDate, empLeaves = :newLeaves " +
+  // "WHERE emp_id = :id AND to_char(date, 'dd-Mon-yy') =
+  // to_char(sysdate,'dd-Mon-yy')");
+
+  // query.setParameter("newDate", loginDate); // Convert Date to Timestamp
+  // query.setParameter("newLeaves", leaves);
+  // query.setParameter("id", id);
+
+  // int updatedCount = query.executeUpdate();
+
+  // transaction.commit();
+
+  // return updatedCount > 0;
+  // } catch (Exception e) {
+  // if (transaction != null && transaction.isActive()) {
+  // transaction.rollback();
+  // }
+  // e.printStackTrace();
+  // return false;
+  // } finally {
+  // manager.close();
+  // }
+
+  // } catch (Exception e) {
+  // e.printStackTrace();
+  // return false;
+  // }
+  // } else {
+  // return false;
+  // }
+  // }
+  
   @PostMapping("/update/userdata")
   public boolean updateUserLoginDateAndTime(
       @RequestBody DataRequest dataRequest) {
@@ -280,10 +334,10 @@ public class TaskTrackerController {
 
           Query query = manager.createQuery(
               "UPDATE TaskTracker " +
-                  "SET date = :newDate, empLeaves = :newLeaves " +
+                  "SET empLeaves = :newLeaves " +
                   "WHERE emp_id = :id AND to_char(date, 'dd-Mon-yy') = to_char(sysdate,'dd-Mon-yy')");
 
-          query.setParameter("newDate", loginDate); // Convert Date to Timestamp
+          // query.setParameter("newDate", loginDate); // Convert Date to Timestamp
           query.setParameter("newLeaves", leaves);
           query.setParameter("id", id);
 
@@ -329,5 +383,10 @@ public class TaskTrackerController {
   // return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
   // }
   // }
+
+  @QueryMapping
+  public List<TaskTracker> getAllTaskTracker() {
+    return trackerRepository.findAll();
+  }
 
 }

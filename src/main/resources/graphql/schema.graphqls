@@ -1,0 +1,49 @@
+type Query {
+  allUsers: [User]
+  getUser(userId: Int): User
+  getAllTaskTrackers: [TaskTracker]
+  findByIdAndPassword(id: String, password: String): UserResponseModel
+}
+
+type ResponseModel {
+  dataArray: [User]
+  userResponseModel: UserResponseModel
+  user: User
+  errorMsg: String
+  errorCode: String
+}
+
+type UserResponseModel {
+  userName: String
+  #  employeeRole: String
+  email: String
+  mobileNumber: String
+  trackers: [TaskTracker]
+  id: String
+  errMsg: String
+  errCode: String
+  roles: [UserRole]
+}
+
+type User {
+  id: ID!
+  empName: String
+  mobileNumber: String
+  password: String
+  email: String
+  trackers: [TaskTracker]
+  userRoles: [UserRole]
+}
+
+type TaskTracker {
+  trackerId: ID!
+  date: String # Using String for date representation
+  empLeaves: String
+  user: User
+}
+
+type UserRole {
+  id: ID!
+  role: String
+  user: User
+}

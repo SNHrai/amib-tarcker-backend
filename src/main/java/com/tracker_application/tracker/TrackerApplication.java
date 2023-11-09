@@ -32,7 +32,7 @@ public class TrackerApplication {
 	public void initTwilio() {
 		Twilio.init(config.getAccountSid(), config.getAuthToken());
 	}
-
+	
 	public static void main(String[] args) {
 		SpringApplication.run(TrackerApplication.class, args);
 	}

@@ -7,6 +7,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -29,7 +30,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import com.tracker_application.tracker.exception.ResourceNotFoundException;
-import com.tracker_application.tracker.model.AuthCredentialRequest;
+import com.tracker_application.tracker.model.JwtRequest;
 import com.tracker_application.tracker.model.DataRequest;
 import com.tracker_application.tracker.model.EmployeeData;
 import com.tracker_application.tracker.model.EmployeeInfoResponse;
@@ -73,18 +74,24 @@ public class UserServiceApplication {
     this.userRepository = userRepository;
     this.taskTracker = taskTracker;
     this.trackerRepository = trackerRepository;
-  
-  
   }
 
-  public ResponseModel loginUserValidation(AuthCredentialRequest userIdAuthCredentialRequest) {
+  public ResponseModel loginUserValidation(JwtRequest userIdAuthCredentialRequest) {
     ResponseModel arrayResponseModel = new ResponseModel();
-    logger.info(TAG, "user_id", userIdAuthCredentialRequest);
-    if (userIdAuthCredentialRequest != null) {
 
-      arrayResponseModel = daoRepository.userValidationDao(userIdAuthCredentialRequest.getUserId(),
-          userIdAuthCredentialRequest.getPassword());
+    logger.info(TAG, "user_info", userIdAuthCredentialRequest);
+
+    User user = userRepository.findAllUserByUserId(userIdAuthCredentialRequest.getUserId());
+    if (user != null) {
+      if (user.getPassword() != null) {
+        arrayResponseModel = daoRepository.userValidationDao(userIdAuthCredentialRequest.getUserId(),
+            userIdAuthCredentialRequest.getPassword());
+      } else {
+        arrayResponseModel = daoRepository.resetUserPassword(userIdAuthCredentialRequest.getUserId(),
+            userIdAuthCredentialRequest.getPassword());
+      }
     }
+
     return arrayResponseModel;
 
   }

@@ -76,13 +76,52 @@ public class DaoRepository {
         return arrayResponseModel;
     }
 
+
+    public ResponseModel resetUserPassword(String userId, String password){
+         logger.info("user id", userId, password);
+        ResponseModel arrayResponseModel = new ResponseModel();
+        UserResponseModel userResponseModel = new UserResponseModel();
+        getConnection();
+        CallableStatement callableStatement = null;
+
+        String callProcedure = "{call EMP_UPDATE_PASSWORD(?,?,?,?,?,?,?)}";
+        try {
+            callableStatement = connection.prepareCall(callProcedure);
+            callableStatement.setString(1, userId);
+            callableStatement.setString(2, password);
+            callableStatement.registerOutParameter(3, java.sql.Types.VARCHAR);
+            callableStatement.registerOutParameter(4, java.sql.Types.VARCHAR);
+            callableStatement.registerOutParameter(5, java.sql.Types.VARCHAR);
+            callableStatement.registerOutParameter(6, java.sql.Types.VARCHAR);
+            callableStatement.registerOutParameter(7, java.sql.Types.INTEGER);
+            callableStatement.executeUpdate();
+
+            userResponseModel.setUserName(callableStatement.getString(5));
+            userResponseModel.setEmployeeRole(callableStatement.getString(6));
+            userResponseModel.setVerticleHeadId(callableStatement.getInt(7));
+
+            arrayResponseModel.setData(userResponseModel);
+            arrayResponseModel.setErrorMsg(callableStatement.getString(3));
+            arrayResponseModel.setErrorCode(callableStatement.getString(4));
+
+        } catch (SQLException exception) {
+            arrayResponseModel.setErrorCode(ApiConstants.TECHNICAL_ERROR_ON_SERVER);
+            arrayResponseModel.setErrorMsg(exception.toString());
+            exception.printStackTrace();
+        } finally {
+            CloseConnection(callableStatement, connection);
+        }
+        return arrayResponseModel;
+    }
+
+
     public User getUserByPassword(String responsePassword) {
         logger.info("user id", responsePassword);
         User user = new User();
 
         getConnection();
         CallableStatement callableStatement = null;
-        String callProcedure = "{call EMP_UPDATE_PASSWORD(?,?)}";
+        String callProcedure = "{call EMP_GET_BY_PASSWORD(?,?)}";
         try {
             callableStatement = connection.prepareCall(callProcedure);
             callableStatement.setString(1, responsePassword);
@@ -221,7 +260,7 @@ public class DaoRepository {
                 user.setId(rs.getString(1));
                 user.setEmpName(rs.getString(2));
                 user.setMobileNumber(rs.getString(3));
-                user.setVerticalId(rs.getInt(4));
+                // user.setVerticalId(rs.getInt(4));
                 user.setPassword(rs.getString(5));
             }
 

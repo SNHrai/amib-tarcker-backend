@@ -7,38 +7,49 @@ import java.util.Map;
 
 import javax.persistence.EntityManagerFactory;
 
+import org.apache.catalina.authenticator.SpnegoAuthenticator.AuthenticateAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tracker_application.tracker.TrackerApplication;
+import com.tracker_application.tracker.constants.ApiConstants;
 import com.tracker_application.tracker.dto.PasswordResetRequestDto;
-import com.tracker_application.tracker.model.AuthCredentialRequest;
+import com.tracker_application.tracker.exception.ResourceNotFoundException;
+import com.tracker_application.tracker.model.JwtRequest;
+import com.tracker_application.tracker.model.JwtResponse;
+import com.tracker_application.tracker.model.AuthenticationResponse;
 import com.tracker_application.tracker.model.Mail;
 import com.tracker_application.tracker.model.MailRequestBody;
 import com.tracker_application.tracker.model.MessageDetails;
 import com.tracker_application.tracker.model.ResponseModel;
 import com.tracker_application.tracker.model.User;
+import com.tracker_application.tracker.model.UserResponseModel;
 import com.tracker_application.tracker.repository.UserRepository;
 import com.tracker_application.tracker.service.EmailSenderService;
+import com.tracker_application.tracker.service.JwtService;
 import com.tracker_application.tracker.service.TwilioOtpService;
 import com.tracker_application.tracker.service.UserServiceApplication;
 
 @RestController
 public class LoginController {
-
     private String TAG = "LoginController";
     private UserServiceApplication serviceApplication;
     private UserRepository userRepository;
     private EntityManagerFactory managerFactory;
     private EmailSenderService emailService;
     private TwilioOtpService otpService;
+    private JwtService jwtService;
     int[] num = { 1, 2, 3, 4, 5, 6 };
 
     private static Logger log = LoggerFactory.getLogger(LoginController.class);
@@ -46,23 +57,30 @@ public class LoginController {
     @Autowired
     public LoginController(UserServiceApplication serviceApplication,
             EntityManagerFactory entityManagerFactory, UserRepository userRepository,
-            EmailSenderService emailSenderService, TwilioOtpService otpService) {
+            EmailSenderService emailSenderService, TwilioOtpService otpService, JwtService jwtService) {
 
         this.serviceApplication = serviceApplication;
         this.managerFactory = entityManagerFactory;
         this.userRepository = userRepository;
         this.emailService = emailSenderService;
         this.otpService = otpService;
+        this.jwtService = jwtService;
 
+    }
+
+    @PostMapping("/authenticate")
+    public JwtResponse createJwtToken(@RequestBody JwtRequest jwtRequest) throws Exception {
+        return jwtService.createJwtToken(jwtRequest);
     }
 
     private String USER_NOT_FOUND_MSG = "USER NOT FOUND";
 
-    @PostMapping("/login")
-    public ResponseEntity<ResponseModel> loginDemo(@RequestBody AuthCredentialRequest authCredentialRequest) {
-        ResponseModel arrayResponseModel = serviceApplication.loginUserValidation(authCredentialRequest);
-        return new ResponseEntity(arrayResponseModel, HttpStatus.OK);
-    }
+    // @PostMapping("/login")
+    // public ResponseEntity<ResponseModel> loginDemo(@RequestBody JwtRequest authCredentialRequest) {
+    //     ResponseModel arrayResponseModel = serviceApplication.loginUserValidation(authCredentialRequest);
+    //     return new ResponseEntity(arrayResponseModel, HttpStatus.OK);
+    // }
+
 
     @PostMapping("/otp/mess")
     public ResponseEntity<MailRequestBody> sendOtpToUser(@RequestBody MailRequestBody requestBody) {
@@ -78,7 +96,7 @@ public class LoginController {
                 mail.setSubject("Your New Password");
                 mail.setFrom("sr35285@gmail.com");
                 mail.setMailTo(requestBody.getMailTo());
-
+                userRepository.updateEmailById(email, requestBody.getUserid());
                 String password = serviceApplication.generateRandomNumber(num, 3);
                 String username = userRepository.findUserNameByUserId(requestBody.getUserid());
                 User user = userRepository.findByUserName(username);
@@ -125,75 +143,40 @@ public class LoginController {
         return new ResponseEntity<>(requestBody, HttpStatus.OK);
     };
 
-    // @PostMapping("/sms/users")
-    // public boolean postUserSMS(@RequestBody MessageDetails details) {
-    // try {
-    // MessageDetails messageDetails = new MessageDetails();
-    // String messBody = "Your Otp mess";
-    // messageDetails.setMessageBody(messBody);
-    // messageDetails.setListId(details.getListId());
-    // sendSmsService.sendOtpSMStoUsers(messageDetails);
-    // return true;
+    @PostMapping("/retrieve/email/{userId}")
+    public ResponseEntity<String> recoverPassword(@PathVariable(value = "userId") String userId) {
+        Map<String, Object> model = new HashMap<>();
+        try {
 
-    // } catch (Exception e) {
-    // return false;
-    // }
-    // }
+            String password = "";
+            User user = userRepository.findAllUserByUserId(userId);
+            if (user != null) {
+                if (user.getPassword() != null) {
 
-    // @PostMapping("/api/sms1000")
-    // public ResponseEntity<String> sendSMStoUpto1000Numbers(@RequestBody
-    // MessageDetails messageDetails) {
+                    password = user.getPassword();
+                    if (user.getEmail() != null) {
+                        Mail mail = new Mail();
+                        mail.setMailTo(user.getEmail());
+                        mail.setFrom("sr35285@gmail.com");
+                        mail.setSubject("Your Recovered password");
+                        model.put("username", user.getEmpName());
+                        model.put("password", password);
+                        model.put("type", "PASSWORD");
+                        mail.setProps(model);
+                        emailService.sendEmail(mail);
+                    }
+                    return new ResponseEntity<String>(password, HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<String>("NO PASSWORD FOUND FOR THIS ID PLEASE CREATE ONE",
+                            HttpStatus.OK);
+                }
 
-    // SmsApi smsApi = new SmsApi(clickSendConfig);
-
-    // SmsMessage smsMessage = new SmsMessage();
-    // smsMessage.body(messageDetails.getMessageBody());
-    // smsMessage.listId(messageDetails.getListId());
-    // smsMessage.source(messageDetails.getSendingSource());
-
-    // List<SmsMessage> smsMessageList = new ArrayList<>();
-    // smsMessageList.add(smsMessage);
-
-    // // SmsMessageCollection | SmsMessageCollection model
-    // SmsMessageCollection smsMessages = new SmsMessageCollection();
-    // smsMessages.messages(smsMessageList);
-    // try {
-    // String result = smsApi.smsSendPost(smsMessages);
-    // return new ResponseEntity<>(result, HttpStatus.OK);
-    // } catch (ApiException e) {
-    // e.printStackTrace();
-    // }
-
-    // return new ResponseEntity<>("Exception when calling SmsApi#smsSendPost",
-    // HttpStatus.BAD_REQUEST);
-    // }
-
-    // @PostMapping("/login")
-    // public UserResponseModel login(@RequestBody AuthCredentialRequest request) {
-
-    // UserResponseModel userResponseModel = new UserResponseModel();
-
-    // if (request.getUserName() != null && request.getPassword() != null) {
-    // // User user = userRepository.findByUserName(request.getUserName());
-    // User user = userRepository.findByUserNameandPassword(request.getUserName(),
-    // request.getPassword());
-
-    // if (user.getUserName() != null) {
-    // userResponseModel.setEmployeeRole(user.getEmployeeRole());
-    // userResponseModel.setUserName(user.getUserName());
-    // userResponseModel.setVerticleHeadId(user.getVerticleHeadId());
-    // userResponseModel.setId(user.getId());
-
-    // } else {
-    // new ResourceNotFoundException(USER_NOT_FOUND_MSG + request.getUserName());
-    // }
-
-    // } else {
-    // new ResourceNotFoundException(USER_NOT_FOUND_MSG + request.getUserName());
-    // }
-    // ;
-
-    // return userResponseModel;
-    // }
+            } else {
+                return new ResponseEntity<String>(password, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<String>(e.toString(), HttpStatus.BAD_REQUEST);
+        }
+    }
 
 }
